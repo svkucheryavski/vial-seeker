@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vial seeker</title>
+        <style>
+            :root {
+                --border-dark: #706560;
+                --border-moderate: #998a83;
+                --text-color: #808080;
+                --accent-color: #ff3d00;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 1.5vw;
+                background: #e8e0da;
+            }
+
+            /* uploader */
+            .image-upload-pane {
+                height: 100vh;
+                width: 100vw;
+                margin: 0;
+                padding: 2em;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .image-upload-pane > label {
+                display: block;
+                text-align: center;
+                font-size: 1.4em;
+                padding: 1em;
+                box-sizing: border-box;
+                background: #f0f0f0;
+                color: #808080;
+                border-radius: 0.25em;
+                border: solid 2px var(--border-dark);
+            }
+
+            #imageInput {
+                display: none;
+            }
+
+            #messageField {
+                display: none;
+                padding: 1em;
+                margin: 0;
+                font-size: 1.4em;
+                color: #808080;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            #messageField.error {
+                color: crimson;
+            }
+
+            .loader {
+                width: 1.3em;
+                height: 1.3em;
+                border: 5px solid #fff;
+                border-bottom-color: var(--accent-color);
+                border-radius: 50%;
+                display: inline-block;
+                box-sizing: border-box;
+                animation: rotation 1s linear infinite;
+                margin-right: 0.5em;
+            }
+
+            @keyframes rotation {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* main interface */
+
+            /* vial canvas */
+            #vialCanvas {
+                width: 100%;
+                height: auto;
+                display: none;
+                border: 1px solid var(--border-dark);
+                border-radius: 0.25em;
+                box-sizing: border-box;
+            }
+
+            .search-pane {
+                display: none;
+                grid-template-areas:
+                    "canvas search"
+                    "button search"
+                    ". search";
+                grid-template-columns: 2fr 1fr;
+                grid-template-rows: min-content 50px auto;
+                box-sizing: border-box;
+                width: 100%;
+                height: 100%;
+                justify-content: center;
+            }
+
+            #resetButton {
+                color: #fff8f0;
+                background: var(--accent-color);
+                border: none;
+                outline: none;
+                font-size: 0.9em;
+                box-shadow: none;
+                padding: 0.25em 0.5em;
+                margin: 0.25em;
+                border-radius: 0.35em;
+                cursor: pointer;
+            }
+
+            .reset-button-pane {
+                grid-area: button;
+                text-align: center;
+            }
+
+            .vial-canvas-pane {
+                grid-area: canvas;
+                box-sizing: border-box;
+                padding: 1em;
+                width: 100%;
+            }
+
+            .search-form-pane {
+                grid-area: search;
+                box-sizing: border-box;
+                padding: 1em;
+                width: 100%;
+            }
+
+            .search-form-pane {
+                display: grid;
+                grid-template-areas:
+                    "input input"
+                    "list1 list1";
+                grid-template-rows: 3em 1fr;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            #searchInputBlock {
+                grid-area: input;
+                padding: 0.1em 0.5em;
+            }
+
+            #searchInput {
+                width: 100%;
+                box-sizing: border-box;
+                border-radius: 0.25em;
+                font-size: 1.1em;
+                padding: 0.25em 0.5em;
+                color: #808080;
+                border: solid 2px var(--border-dark);
+                outline: none;
+            }
+
+            #searchInput:focus {
+                border-color: var(--accent-color);
+            }
+
+            #foundVialsList {
+                grid-area: list1;
+                list-style: none;
+                padding: 0 0.5em;
+                margin: 0;
+            }
+
+            #foundVialsList li {
+                padding: 0.25em 0.5em;
+                color: #504040;
+                border-left: solid 2px var(--border-moderate);
+                border-right: solid 2px var(--border-moderate);
+                background: #fff8fa;
+                text-align: center;
+            }
+
+            #foundVialsList li:first-child {
+                padding: 0.5em;
+                color: var(--accent-color);
+                font-weight: bold;
+                border-top: solid 2px var(--border-moderate);
+                border-bottom: dotted 1px var(--border-moderate);
+                border-radius: 0.25em 0.25em 0 0;
+            }
+
+            #foundVialsList li:first-child > img {
+                width: 200px;
+                height: 200px;
+                margin: 10px;
+            }
+
+            #foundVialsList li:last-child {
+                border-bottom: solid 2px var(--border-moderate);
+                border-radius: 0 0 0.25em 0.25em;
+            }
+
+            #foundMetaList {
+                grid-area: list2;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="image-upload-pane">
+            <label id="imageInputLabel" for="imageInput">⇪ Select og drag and drop a file with vial image</label>
+            <input accept="image/png, image/jpeg" type="file" id="imageInput" />
+            <p id="messageField"></p>
+        </div>
+
+        <div class="search-pane">
+            <div class="reset-button-pane">
+                <button id="resetButton">Reset</button>
+            </div>
+            <div class="vial-canvas-pane">
+                <canvas id="vialCanvas"></canvas>
+            </div>
+            <div class="search-form-pane">
+                <div id="searchInputBlock">
+                    <input id="searchInput" type="text" placeholder="enter part of a vial number..." />
+                </div>
+                <ul id="foundVialsList"></ul>
+                <ul id="foundMetaList"></ul>
+            </div>
+        </div>
+
+        <script src="{{ url_for('static', filename='app.js') }}"></script>
+    </body>
+</html>
