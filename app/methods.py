@@ -7,6 +7,8 @@ from PIL import Image
 from itertools import combinations
 from numpy.typing import NDArray
 
+#pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 # predefined image size - all images will be rescaled to after preprocessing
 VIAL_AREA_SIZE = (3878, 2550)
 

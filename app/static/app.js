@@ -68,8 +68,8 @@ function processResponse(data) {
    vialImageWidth = item.imgWidth;
    vialImageHeight = item.imgHeight;
    vialImage.src = 'data:image/png;base64,' + item.img;
-   resizeCanvas();
    vialCanvas.style.display = 'block';
+   resizeCanvas();
 }
 
 
