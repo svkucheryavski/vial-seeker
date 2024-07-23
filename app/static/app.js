@@ -1,5 +1,5 @@
 // constants
-MAX_VIALS_NUM = 10 // how many vials show in the search list (in addition to first found)
+const MAX_VIALS_NUM = 10 // how many vials show in the search list (in addition to first found)
 
 // get references to DOM elements
 const uploadPane = document.querySelector('.image-upload-pane');
@@ -10,46 +10,45 @@ const imageInputLabel = document.getElementById('imageInputLabel');
 const vialCanvas = document.getElementById('vialCanvas');
 const foundVialsList = document.getElementById('foundVialsList');
 const resetButton = document.getElementById('resetButton');
+const searchInput = document.getElementById('searchInput');
+
 const vialCtx = vialCanvas.getContext('2d');
-const vialImage = new Image();
 
-// global variables related to image and canvas size
-let vialImageWidth = 0;
-let vialImageHeight = 0;
-let canvasScaleX = 1;
-let canvasScaleY = 1;
-let canvasScale = 1;
-
-// global variables for search
-let metaData = undefined;
-let searchString = "";
-let selectedVials = [];
-let vialList = [];
-
+const state = {
+   vialImage: new Image(),
+   vialImageWidth: 0,
+   vialImageHeight: 0,
+   canvasScaleX: 1,
+   canvasScaleY: 1,
+   canvasScale: 1,
+   searchString: '',
+   selectedVials: [],
+   vialList: []
+};
 
 /**********************/
 /* Methods            */
 /**********************/
 
+
 // Resets everything to initial stage
 function resetAll() {
-   vialImageWidth = 0;
-   vialImageHeight = 0;
-   canvasScaleX = 1;
-   canvasScaleY = 1;
-   canvasScale = 1;
+   state.vialImageWidth = 0;
+   state.vialImageHeight = 0;
+   state.canvasScaleX = 1;
+   state.canvasScaleY = 1;
+   state.canvasScale = 1;
+   state.searchString = '';
+   state.selectedVials = [];
+   state.vialList = [];
+   state.vialImage = new Image();
 
-   searchString = '';
-   selectedVials = [];
-   vialList = [];
-   searchInput.value = '';
-
-   vialImage.src = '';
    vialCanvas.style.display = 'none';
    searchPane.style.display = 'none';
    uploadPane.style.display = 'flex';
    foundVialsList.innerHTML = '';
 
+   searchInput.value = '';
    imageInput.value = '';
    imageInput.files[0] = null;
    imageInputLabel.style.display = 'block';
@@ -63,23 +62,27 @@ function processResponse(data) {
    uploadPane.style.display = 'none';
    searchPane.style.display = 'grid';
 
-   item = data[0];
-   vialList = item.vials;
-   vialImageWidth = item.imgWidth;
-   vialImageHeight = item.imgHeight;
-   vialImage.src = 'data:image/png;base64,' + item.img;
-   vialCanvas.style.display = 'block';
-   resizeCanvas();
+   const item = data[0];
+   state.vialList = item.vials;
+   state.vialImageWidth = item.imgWidth;
+   state.vialImageHeight = item.imgHeight;
+   state.vialImage.src = 'data:image/png;base64,' + item.img;
+
+   // Ensure image is fully loaded before resizing and drawing
+   state.vialImage.onload = () => {
+      vialCanvas.style.display = 'block';
+      resizeCanvas();
+   };
 }
 
 
 // Adjusts scale factors based on current canvas size and redraw the canvas
 function resizeCanvas() {
    vialCanvas.width = (window.innerWidth - 10) / 2;
-   vialCanvas.height = vialCanvas.width / vialImageWidth * vialImageHeight;
-   canvasScaleX = vialCanvas.width / vialImageWidth;
-   canvasScaleY = vialCanvas.height / vialImageHeight;
-   canvasScale = Math.min(canvasScaleX, canvasScaleY);
+   vialCanvas.height = vialCanvas.width / state.vialImageWidth * state.vialImageHeight;
+   state.canvasScaleX = vialCanvas.width / state.vialImageWidth;
+   state.canvasScaleY = vialCanvas.height / state.vialImageHeight;
+   state.canvasScale = Math.min(state.canvasScaleX, state.canvasScaleY);
    drawImage();
    drawVials();
 }
@@ -88,9 +91,9 @@ function resizeCanvas() {
 // Draws vial image on the canvas
 function drawImage() {
    vialCtx.save();
-   vialCtx.scale(canvasScale, canvasScale);
-   vialCtx.clearRect(0, 0, vialImageWidth, vialImageHeight);
-   vialCtx.drawImage(vialImage, 0, 0, vialImageWidth, vialImageHeight);
+   vialCtx.scale(state.canvasScale,state. canvasScale);
+   vialCtx.clearRect(0, 0, state.vialImageWidth, state.vialImageHeight);
+   vialCtx.drawImage(state.vialImage, 0, 0, state.vialImageWidth, state.vialImageHeight);
    vialCtx.restore();
 }
 
@@ -98,10 +101,10 @@ function drawImage() {
 // Adds semitransparent white rectangle on top of the vial image */
 function drawBackstage() {
    vialCtx.save();
-   vialCtx.scale(canvasScale, canvasScale);
+   vialCtx.scale(state.canvasScale, state.canvasScale);
    vialCtx.globalAlpha = 0.5;
    vialCtx.fillStyle = 'white';
-   vialCtx.fillRect(0, 0, vialImageWidth, vialImageHeight);
+   vialCtx.fillRect(0, 0, state.vialImageWidth, state.vialImageHeight);
    vialCtx.globalAlpha = 1.0;
    vialCtx.fill();
    vialCtx.restore();
@@ -119,19 +122,19 @@ function drawVial(cx, cy, cr, color, thickness) {
 
 // Draws first five selected vials
 function drawVials() {
-   if (selectedVials.length < 1) return;
+   if (state.selectedVials.length < 1) return;
 
    drawBackstage();
    vialCtx.save();
-   vialCtx.scale(canvasScale, canvasScale);
+   vialCtx.scale(state.canvasScale, state.canvasScale);
 
    // first vial in the list must be shown red and thick
-   vial = selectedVials[0];
+   let vial = state.selectedVials[0];
    drawVial(vial[1], vial[2], vial[3], '#ff3d00', 15);
 
    // the other vials just black
-   for (let i = 1; i < Math.min(selectedVials.length, MAX_VIALS_NUM); i++) {
-      vial = selectedVials[i];
+   for (let i = 1; i < Math.min(state.selectedVials.length, MAX_VIALS_NUM); i++) {
+      vial = state.selectedVials[i];
       drawVial(vial[1], vial[2], vial[3], 'black', 10);
    }
 
@@ -150,11 +153,11 @@ function cropSelectedVial(cx, cy, r) {
    const ctx = canvas.getContext('2d');
 
    // Set the canvas size to the full image size
-   canvas.width = vialImage.width;
-   canvas.height = vialImage.height;
+   canvas.width = state.vialImage.width;
+   canvas.height = state.vialImage.height;
 
    // Draw the image onto the canvas
-   ctx.drawImage(vialImage, 0, 0, vialImage.width, vialImage.height);
+   ctx.drawImage(state.vialImage, 0, 0, state.vialImage.width, state.vialImage.height);
 
    // Get the image data for the specified region
    const imageData = ctx.getImageData(startX, startY, width, height);
@@ -166,8 +169,6 @@ function cropSelectedVial(cx, cy, r) {
    // Set the new canvas size to the crop size
    croppedCanvas.width = width;
    croppedCanvas.height = height;
-
-   // Put the extracted image data onto the new canvas
    croppedCtx.putImageData(imageData, 0, 0);
 
    // Create a new image from the cropped canvas
@@ -181,12 +182,9 @@ function cropSelectedVial(cx, cy, r) {
    // Append the image to the temporary container
    tempContainer.appendChild(croppedImage);
 
-   // Get the HTML as a string
-   const htmlString = tempContainer.innerHTML;
-
    return {
       image: croppedImage,
-      html: htmlString
+      html: tempContainer.innerHTML
    };
 }
 
@@ -209,6 +207,17 @@ function hideMessage() {
    messageArea.style.display = 'none';
 }
 
+// Debounce function to limit the rate of search input handling
+function debounce(func, delay) {
+    let debounceTimer;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
 // Listeners
 imageInput.addEventListener('change', async () => {
    const file = imageInput.files[0];
@@ -222,7 +231,6 @@ imageInput.addEventListener('change', async () => {
    formData.append('image', file);
 
    try {
-
       hideMessage()
       imageInputLabel.style.display = 'none';
       showMessage('<span class="loader"></span><span>Processing image, please wait...</span>');
@@ -244,23 +252,23 @@ imageInput.addEventListener('change', async () => {
          hideMessage()
       }
    } catch (error) {
+      resetAll();
       showError('There was a problem with the fetch operation: ' + error);
       imageInputLabel.style.display = 'block';
-   } finally {
    }
 });
 
-searchInput.addEventListener('keyup', () => {
+searchInput.addEventListener('keyup', debounce(() => {
    const searchString = searchInput.value.trim();
    if (searchString === '') {
-      selectedVials = [];
+      state.selectedVials = [];
    } else {
-      selectedVials = vialList.filter(v => v[0].includes(searchInput.value))
+      state.selectedVials = state.vialList.filter(v => v[0].includes(searchInput.value))
    }
 
    let listElements = '';
-   for (let i = 0; i < Math.min(selectedVials.length, MAX_VIALS_NUM); i++) {
-      const vial = selectedVials[i];
+   for (let i = 0; i < Math.min(state.selectedVials.length, MAX_VIALS_NUM); i++) {
+      const vial = state.selectedVials[i];
       if (i == 0) {
          const img = cropSelectedVial(vial[1], vial[2], vial[3]);
          listElements += `<li>${img.html}<br> ${vial[0]}</li>`;
@@ -271,10 +279,11 @@ searchInput.addEventListener('keyup', () => {
 
    foundVialsList.innerHTML = listElements
    resizeCanvas();
-});
+}, 50));
 
 resetButton.addEventListener('click', () => {
    resetAll();
 });
 
+window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
